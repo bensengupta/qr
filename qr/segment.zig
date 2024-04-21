@@ -71,7 +71,7 @@ const Segment = struct {
         }
 
         return Self{
-            .prefix = BitBuffer.init(allocator),
+            .prefix = prefix,
             .mode = ModeIndicator.Byte,
             .numChars = numChars,
             .data = buffer,
@@ -150,6 +150,7 @@ pub const Segments = struct {
 
         // Add padding bits
         const numPaddingBits = 8 - (buffer.getLength() % 8);
+
         for (0..numPaddingBits) |_| {
             if (buffer.getLength() >= dataBitsCapacity) {
                 break;

@@ -1,3 +1,10 @@
+const std = @import("std");
+const galois = @import("galois-field.zig");
+
+const Allocator = std.mem.Allocator;
+const GaloisField = galois.GaloisField;
+const Polynomial = galois.Polynomial;
+
 pub const ErrorCorrectionLevel = enum(u2) {
     L = 0b01,
     M = 0b00,
@@ -250,3 +257,276 @@ pub fn getErrorCorrectionCodewords(version: usize, ecLevel: ErrorCorrectionLevel
         else => unreachable,
     };
 }
+
+pub fn getErrorCorrectionBlocks(version: usize, ecLevel: ErrorCorrectionLevel) usize {
+    return switch (version) {
+        1 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 1,
+            ErrorCorrectionLevel.M => 1,
+            ErrorCorrectionLevel.Q => 1,
+            ErrorCorrectionLevel.H => 1,
+        },
+        2 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 1,
+            ErrorCorrectionLevel.M => 1,
+            ErrorCorrectionLevel.Q => 1,
+            ErrorCorrectionLevel.H => 1,
+        },
+        3 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 1,
+            ErrorCorrectionLevel.M => 1,
+            ErrorCorrectionLevel.Q => 2,
+            ErrorCorrectionLevel.H => 2,
+        },
+        4 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 1,
+            ErrorCorrectionLevel.M => 2,
+            ErrorCorrectionLevel.Q => 2,
+            ErrorCorrectionLevel.H => 4,
+        },
+        5 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 1,
+            ErrorCorrectionLevel.M => 2,
+            ErrorCorrectionLevel.Q => 4,
+            ErrorCorrectionLevel.H => 4,
+        },
+        6 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 2,
+            ErrorCorrectionLevel.M => 4,
+            ErrorCorrectionLevel.Q => 4,
+            ErrorCorrectionLevel.H => 4,
+        },
+        7 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 2,
+            ErrorCorrectionLevel.M => 4,
+            ErrorCorrectionLevel.Q => 6,
+            ErrorCorrectionLevel.H => 5,
+        },
+        8 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 2,
+            ErrorCorrectionLevel.M => 4,
+            ErrorCorrectionLevel.Q => 6,
+            ErrorCorrectionLevel.H => 6,
+        },
+        9 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 2,
+            ErrorCorrectionLevel.M => 5,
+            ErrorCorrectionLevel.Q => 8,
+            ErrorCorrectionLevel.H => 8,
+        },
+        10 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 4,
+            ErrorCorrectionLevel.M => 5,
+            ErrorCorrectionLevel.Q => 8,
+            ErrorCorrectionLevel.H => 8,
+        },
+        11 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 4,
+            ErrorCorrectionLevel.M => 5,
+            ErrorCorrectionLevel.Q => 8,
+            ErrorCorrectionLevel.H => 11,
+        },
+        12 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 4,
+            ErrorCorrectionLevel.M => 8,
+            ErrorCorrectionLevel.Q => 10,
+            ErrorCorrectionLevel.H => 11,
+        },
+        13 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 4,
+            ErrorCorrectionLevel.M => 9,
+            ErrorCorrectionLevel.Q => 12,
+            ErrorCorrectionLevel.H => 16,
+        },
+        14 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 4,
+            ErrorCorrectionLevel.M => 9,
+            ErrorCorrectionLevel.Q => 16,
+            ErrorCorrectionLevel.H => 16,
+        },
+        15 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 6,
+            ErrorCorrectionLevel.M => 10,
+            ErrorCorrectionLevel.Q => 12,
+            ErrorCorrectionLevel.H => 18,
+        },
+        16 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 6,
+            ErrorCorrectionLevel.M => 10,
+            ErrorCorrectionLevel.Q => 17,
+            ErrorCorrectionLevel.H => 16,
+        },
+        17 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 6,
+            ErrorCorrectionLevel.M => 11,
+            ErrorCorrectionLevel.Q => 16,
+            ErrorCorrectionLevel.H => 19,
+        },
+        18 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 6,
+            ErrorCorrectionLevel.M => 13,
+            ErrorCorrectionLevel.Q => 18,
+            ErrorCorrectionLevel.H => 21,
+        },
+        19 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 7,
+            ErrorCorrectionLevel.M => 14,
+            ErrorCorrectionLevel.Q => 21,
+            ErrorCorrectionLevel.H => 25,
+        },
+        20 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 8,
+            ErrorCorrectionLevel.M => 16,
+            ErrorCorrectionLevel.Q => 20,
+            ErrorCorrectionLevel.H => 25,
+        },
+        21 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 8,
+            ErrorCorrectionLevel.M => 17,
+            ErrorCorrectionLevel.Q => 23,
+            ErrorCorrectionLevel.H => 25,
+        },
+        22 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 9,
+            ErrorCorrectionLevel.M => 17,
+            ErrorCorrectionLevel.Q => 23,
+            ErrorCorrectionLevel.H => 34,
+        },
+        23 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 9,
+            ErrorCorrectionLevel.M => 18,
+            ErrorCorrectionLevel.Q => 25,
+            ErrorCorrectionLevel.H => 30,
+        },
+        24 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 10,
+            ErrorCorrectionLevel.M => 20,
+            ErrorCorrectionLevel.Q => 27,
+            ErrorCorrectionLevel.H => 32,
+        },
+        25 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 12,
+            ErrorCorrectionLevel.M => 21,
+            ErrorCorrectionLevel.Q => 29,
+            ErrorCorrectionLevel.H => 35,
+        },
+        26 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 12,
+            ErrorCorrectionLevel.M => 23,
+            ErrorCorrectionLevel.Q => 34,
+            ErrorCorrectionLevel.H => 37,
+        },
+        27 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 12,
+            ErrorCorrectionLevel.M => 25,
+            ErrorCorrectionLevel.Q => 34,
+            ErrorCorrectionLevel.H => 40,
+        },
+        28 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 13,
+            ErrorCorrectionLevel.M => 26,
+            ErrorCorrectionLevel.Q => 35,
+            ErrorCorrectionLevel.H => 42,
+        },
+        29 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 14,
+            ErrorCorrectionLevel.M => 28,
+            ErrorCorrectionLevel.Q => 38,
+            ErrorCorrectionLevel.H => 45,
+        },
+        30 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 15,
+            ErrorCorrectionLevel.M => 29,
+            ErrorCorrectionLevel.Q => 40,
+            ErrorCorrectionLevel.H => 48,
+        },
+        31 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 16,
+            ErrorCorrectionLevel.M => 31,
+            ErrorCorrectionLevel.Q => 43,
+            ErrorCorrectionLevel.H => 51,
+        },
+        32 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 17,
+            ErrorCorrectionLevel.M => 33,
+            ErrorCorrectionLevel.Q => 45,
+            ErrorCorrectionLevel.H => 54,
+        },
+        33 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 18,
+            ErrorCorrectionLevel.M => 35,
+            ErrorCorrectionLevel.Q => 48,
+            ErrorCorrectionLevel.H => 57,
+        },
+        34 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 19,
+            ErrorCorrectionLevel.M => 37,
+            ErrorCorrectionLevel.Q => 51,
+            ErrorCorrectionLevel.H => 60,
+        },
+        35 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 19,
+            ErrorCorrectionLevel.M => 38,
+            ErrorCorrectionLevel.Q => 53,
+            ErrorCorrectionLevel.H => 63,
+        },
+        36 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 20,
+            ErrorCorrectionLevel.M => 40,
+            ErrorCorrectionLevel.Q => 56,
+            ErrorCorrectionLevel.H => 66,
+        },
+        37 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 21,
+            ErrorCorrectionLevel.M => 43,
+            ErrorCorrectionLevel.Q => 59,
+            ErrorCorrectionLevel.H => 70,
+        },
+        38 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 22,
+            ErrorCorrectionLevel.M => 45,
+            ErrorCorrectionLevel.Q => 62,
+            ErrorCorrectionLevel.H => 74,
+        },
+        39 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 24,
+            ErrorCorrectionLevel.M => 47,
+            ErrorCorrectionLevel.Q => 65,
+            ErrorCorrectionLevel.H => 77,
+        },
+        40 => switch (ecLevel) {
+            ErrorCorrectionLevel.L => 25,
+            ErrorCorrectionLevel.M => 49,
+            ErrorCorrectionLevel.Q => 68,
+            ErrorCorrectionLevel.H => 81,
+        },
+        else => unreachable,
+    };
+}
+
+pub const reed_solomon = struct {
+    pub fn encode(allocator: Allocator, gf: GaloisField, msgIn: []u8, degree: usize) ![]u8 {
+        const gen = try Polynomial.generateRS(allocator, gf, degree);
+
+        var msgOut = try allocator.alloc(u8, msgIn.len + gen.coefficients.len - 1);
+        @memset(msgOut, 0);
+        @memcpy(msgOut[0..msgIn.len], msgIn);
+
+        for (0..msgIn.len) |i| {
+            const coef = msgOut[i];
+
+            if (coef == 0) {
+                continue;
+            }
+
+            for (1..gen.coefficients.len) |j| {
+                msgOut[i + j] ^= gf.mul(gen.coefficients[j], coef);
+            }
+        }
+
+        gen.deinit(allocator);
+        std.mem.copyForwards(u8, msgOut, msgOut[msgIn.len..]);
+        msgOut = try allocator.realloc(msgOut, msgOut.len - msgIn.len);
+        return msgOut;
+    }
+};
