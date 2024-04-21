@@ -5,72 +5,75 @@ const BitBuffer = @import("bit-buffer.zig").BitBuffer;
 
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
+const ArrayList = std.ArrayList;
 
 pub const Blocks = struct {
     const Self = @This();
 
     allocator: Allocator,
-    numBlocks: usize,
-    dcPerBlock: usize,
-    ecPerBlock: usize,
-    dcData: []u8,
-    ecData: []u8,
+    dcData: ArrayList([]u8),
+    ecData: ArrayList([]u8),
 
     pub fn init(
         allocator: Allocator,
-        numBlocks: usize,
-        dcPerBlock: usize,
-        ecPerBlock: usize,
     ) !Self {
         return Self{
             .allocator = allocator,
-            .numBlocks = numBlocks,
-            .dcPerBlock = dcPerBlock,
-            .ecPerBlock = ecPerBlock,
-            .dcData = try allocator.alloc(u8, numBlocks * dcPerBlock),
-            .ecData = try allocator.alloc(u8, numBlocks * ecPerBlock),
+            .dcData = ArrayList([]u8).init(allocator),
+            .ecData = ArrayList([]u8).init(allocator),
         };
     }
 
     pub fn deinit(self: Self) void {
-        self.allocator.free(self.dcData);
-        self.allocator.free(self.ecData);
+        for (self.dcData.items) |block| {
+            self.allocator.free(block);
+        }
+        for (self.ecData.items) |block| {
+            self.allocator.free(block);
+        }
+        self.dcData.deinit();
+        self.ecData.deinit();
     }
 
-    pub fn writeDCBlocks(self: Self, data: []u8) void {
-        assert(data.len == self.numBlocks * self.dcPerBlock);
-        @memcpy(self.dcData, data);
+    pub fn writeDCBlock(self: *Self, data: []u8) !void {
+        const block = try self.allocator.alloc(u8, data.len);
+        @memcpy(block, data);
+        try self.dcData.append(block);
     }
 
-    pub fn writeECBlock(self: Self, blockIndex: usize, data: []u8) void {
-        assert(blockIndex < self.numBlocks);
-        assert(data.len == self.ecPerBlock);
-
-        const start = blockIndex * self.ecPerBlock;
-        const end = (blockIndex + 1) * self.ecPerBlock;
-
-        @memcpy(self.ecData[start..end], data);
-    }
-
-    pub fn getDCBlockSlice(self: Self, blockIndex: usize) []u8 {
-        const start = blockIndex * self.dcPerBlock;
-        const end = (blockIndex + 1) * self.dcPerBlock;
-        return self.dcData[start..end];
+    pub fn writeECBlock(self: *Self, data: []u8) !void {
+        const block = try self.allocator.alloc(u8, data.len);
+        @memcpy(block, data);
+        try self.ecData.append(block);
     }
 
     pub fn interleave(self: Self, allocator: Allocator) !BitBuffer {
+        assert(self.dcData.items.len >= 1);
+        assert(self.dcData.items.len == self.ecData.items.len);
+
+        const numBlocks = self.dcData.items.len;
+
         var buffer = BitBuffer.init(allocator);
 
-        for (0..self.dcPerBlock) |j| {
-            for (0..self.numBlocks) |i| {
-                const dataCodeword = self.dcData[i * self.dcPerBlock + j];
-                try buffer.append(u8, dataCodeword);
+        var maxDataSize: usize = 0;
+        for (self.dcData.items) |dcBlock| {
+            maxDataSize = @max(maxDataSize, dcBlock.len);
+        }
+
+        for (0..maxDataSize) |j| {
+            for (0..numBlocks) |i| {
+                if (j < self.dcData.items[i].len) {
+                    const dataCodeword = self.dcData.items[i][j];
+                    try buffer.append(u8, dataCodeword);
+                }
             }
         }
 
-        for (0..self.ecPerBlock) |j| {
-            for (0..self.numBlocks) |i| {
-                const ecCodeword = self.ecData[i * self.ecPerBlock + j];
+        const ecCount = self.ecData.items[0].len;
+
+        for (0..ecCount) |j| {
+            for (0..numBlocks) |i| {
+                const ecCodeword = self.ecData.items[i][j];
                 try buffer.append(u8, ecCodeword);
             }
         }

@@ -45,7 +45,7 @@ pub fn getMatrixSize(version: usize) usize {
 }
 
 const ALIGNMENT_POSITIONS_1 = [_]usize{};
-const ALIGNMENT_POSITIONS_2 = [_]usize{ 4, 18 };
+const ALIGNMENT_POSITIONS_2 = [_]usize{ 4, 16 };
 const ALIGNMENT_POSITIONS_3 = [_]usize{ 4, 20 };
 const ALIGNMENT_POSITIONS_4 = [_]usize{ 4, 24 };
 const ALIGNMENT_POSITIONS_5 = [_]usize{ 4, 28 };
@@ -176,4 +176,22 @@ pub fn getTotalCodewords(version: usize) usize {
         40 => 3706,
         else => unreachable,
     };
+}
+
+const VERSION_INFO_GENERATOR: u18 = 0x1f25;
+
+pub fn encodeVersionInfo(formatInfo: u6) u18 {
+    const fmt = @as(u18, formatInfo) << 12;
+    var result = fmt;
+
+    for (0..7) |i| {
+        const shift: u5 = @intCast(i);
+        const mask: u18 = @as(u18, 1) << (17 - shift);
+
+        if (result & mask != 0) {
+            result ^= VERSION_INFO_GENERATOR << (5 - shift);
+        }
+    }
+
+    return result | fmt;
 }

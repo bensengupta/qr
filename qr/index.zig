@@ -165,7 +165,7 @@ const FORMAT_INFO_MASK: u15 = 0b101010000010010;
 fn writeFormatInformation(pixels: BitMatrix, ecLevel: ErrorCorrectionLevel, maskPattern: u3) void {
     var format: u5 = 0;
     format |= @as(u5, @intFromEnum(ecLevel)) << 3;
-    format |= maskPattern;
+    format |= @as(u5, maskPattern);
 
     var encoded = formatInfo.encodeFormatInfo(format);
     encoded ^= FORMAT_INFO_MASK;
@@ -194,16 +194,32 @@ fn writeFormatInformation(pixels: BitMatrix, ecLevel: ErrorCorrectionLevel, mask
 
     // ========= Other corners =========
     index = 0;
-    for (0..8) |i| {
-        pixels.set(8, pixels.size - 1 - i, bits[index]);
+    for (0..7) |i| {
+        pixels.set(pixels.size - 1 - i, 8, bits[index]);
         index += 1;
     }
 
-    pixels.set(8, pixels.size - 8, 1);
+    pixels.set(pixels.size - 8, 8, 1);
 
-    for (0..7) |i| {
-        pixels.set(pixels.size - 7 + i, 8, bits[index]);
+    for (0..8) |i| {
+        pixels.set(8, pixels.size - 8 + i, bits[index]);
         index += 1;
+    }
+}
+
+fn writeVersionInformation(pixels: BitMatrix, version: usize) void {
+    const encoded = versionInfo.encodeVersionInfo(@intCast(version));
+
+    var bits = [_]u1{0} ** 18;
+    utils.splitIntoBits(u18, encoded, &bits);
+
+    for (0..6) |i| {
+        for (0..3) |j| {
+            // Lower left
+            pixels.set(pixels.size - 11 + j, i, bits[bits.len - 1 - (i * 3 + j)]);
+            // Upper right
+            pixels.set(i, pixels.size - 11 + j, bits[bits.len - 1 - (i * 3 + j)]);
+        }
     }
 }
 
@@ -228,38 +244,51 @@ fn encodeData(allocator: Allocator, version: usize, segments: Segments, ecLevel:
     const dataCodewords = try segments.assembleCodewords(allocator, version, ecLevel);
     defer allocator.free(dataCodewords);
 
-    const numDataCodewords = dataCodewords.len;
-    const numECCodewords = errorCorrection.getErrorCorrectionCodewords(version, ecLevel);
-    const numBlocks = errorCorrection.getErrorCorrectionBlocks(version, ecLevel);
+    const totalCodewords = versionInfo.getTotalCodewords(version);
+    const totalECCodewords = errorCorrection.getErrorCorrectionCodewords(version, ecLevel);
+    const totalDataCodewords = totalCodewords - totalECCodewords;
 
-    const dcPerBlock = numDataCodewords / numBlocks;
-    const ecPerBlock = numECCodewords / numBlocks;
+    assert(totalDataCodewords == dataCodewords.len);
 
-    // Ensure that data and EC codewords perfectly fit into the blocks
-    assert(dcPerBlock * numBlocks == numDataCodewords);
-    assert(ecPerBlock * numBlocks == numECCodewords);
+    const numECBlocks = errorCorrection.getErrorCorrectionBlocks(version, ecLevel);
 
-    const blocks = try Blocks.init(allocator, numBlocks, dcPerBlock, ecPerBlock);
+    const blocksInGroup2 = totalCodewords % numECBlocks;
+    const blocksInGroup1 = numECBlocks - blocksInGroup2;
+
+    const totalCodewordsInGroup1 = totalCodewords / numECBlocks;
+
+    const dataCodewordsInGroup1 = totalDataCodewords / numECBlocks;
+    const dataCodewordsInGroup2 = dataCodewordsInGroup1 + 1;
+
+    const ecCount = totalCodewordsInGroup1 - dataCodewordsInGroup1;
+
+    var blocks = try Blocks.init(allocator);
     defer blocks.deinit();
 
     // FIXME: This does not work for the text
-    // "hello worldf asdklfj asdlkfjkl;ajfkl;as"
-    blocks.writeDCBlocks(dataCodewords);
+    // There is still something sus going on
 
     const gf = try GaloisField.init(allocator);
     defer gf.deinit(allocator);
 
-    for (0..numBlocks) |i| {
-        const blockDCData = blocks.getDCBlockSlice(i);
-        const blockECData = try errorCorrection.reed_solomon.encode(allocator, gf, blockDCData, ecPerBlock);
+    var offset: usize = 0;
+    for (0..numECBlocks) |b| {
+        const dataSize = if (b < blocksInGroup1) dataCodewordsInGroup1 else dataCodewordsInGroup2;
+
+        const blockDCData = dataCodewords[offset..(offset + dataSize)];
+
+        try blocks.writeDCBlock(blockDCData);
+
+        const blockECData = try errorCorrection.reed_solomon.encode(allocator, gf, blockDCData, ecCount);
         defer allocator.free(blockECData);
 
-        blocks.writeECBlock(i, blockECData);
+        try blocks.writeECBlock(blockECData);
+        offset += dataSize;
     }
 
-    const interleavedData = try blocks.interleave(allocator);
+    const interleaved = try blocks.interleave(allocator);
 
-    return interleavedData;
+    return interleaved;
 }
 
 pub fn make(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]u8) !void {
@@ -289,9 +318,11 @@ pub fn make(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]u8
     writeData(pixels, reserved, dataBits);
 
     const maskPattern = mask_pattern.applyBestPattern(pixels, reserved);
+    // const maskPattern = mask_pattern.MASK_PATTERN_1;
+    // mask_pattern.applyPattern(maskPattern, pixels, reserved);
 
     writeFormatInformation(pixels, ecLevel, maskPattern);
-    // FIXME: Write version info
+    writeVersionInformation(pixels, version);
     //
     // try ansiRenderer.renderBlue(reserved);
     try ansiRenderer.render(pixels);

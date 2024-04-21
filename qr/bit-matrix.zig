@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const Allocator = std.mem.Allocator;
+const assert = std.debug.assert;
 
 pub const BitMatrix = struct {
     const Self = @This();
@@ -23,6 +24,8 @@ pub const BitMatrix = struct {
     }
 
     pub fn set(self: Self, row: usize, col: usize, value: u1) void {
+        assert(row < self.size);
+        assert(col < self.size);
         self.data[row * self.size + col] = value;
     }
 
