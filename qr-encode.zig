@@ -1,78 +1,18 @@
 const std = @import("std");
-const QrCode = @import("src/index.zig");
+const qr_code = @import("src/index.zig");
 const ansi_renderer = @import("src/ansi-renderer.zig");
 
-const Allocator = std.mem.Allocator;
-const assert = std.debug.assert;
-
-fn printUsageAndExit(args: [][:0]u8) !void {
-    const stderr = std.io.getStdErr().writer();
-    try stderr.print("Usage: {s} [options] <message>\n", .{args[0]});
-    try stderr.print("  -e <level>: Specify error correction level ('L', 'M', 'Q', or 'H'), default: 'L'\n", .{});
-    std.process.exit(1);
-}
+const CliArgs = @import("src/cli-args.zig").CliArgs;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
 
-    const str = try allocator.alloc(u8, 20);
-    _ = try std.fmt.bufPrint(str, "Hello, World!", .{});
-
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
-    if (args.len < 2) {
-        try printUsageAndExit(args);
-    }
+    const cliArgs = CliArgs.parse(args);
 
-    var errorCorrectionLevel = QrCode.ErrorCorrectionLevel.M;
-    var message: ?[:0]u8 = null;
-
-    var i: usize = 1;
-    while (i < args.len) : (i += 1) {
-        var arg = args[i];
-
-        if (std.mem.eql(u8, arg, "-e")) {
-            i += 1;
-
-            if (i >= args.len) {
-                try printUsageAndExit(args);
-            }
-
-            arg = args[i];
-
-            if (std.mem.eql(u8, arg, "L")) {
-                errorCorrectionLevel = QrCode.ErrorCorrectionLevel.L;
-                continue;
-            }
-            if (std.mem.eql(u8, arg, "M")) {
-                errorCorrectionLevel = QrCode.ErrorCorrectionLevel.M;
-                continue;
-            }
-            if (std.mem.eql(u8, arg, "Q")) {
-                errorCorrectionLevel = QrCode.ErrorCorrectionLevel.Q;
-                continue;
-            }
-            if (std.mem.eql(u8, arg, "H")) {
-                errorCorrectionLevel = QrCode.ErrorCorrectionLevel.H;
-                continue;
-            }
-
-            try printUsageAndExit(args);
-        }
-
-        if (message != null) {
-            try printUsageAndExit(args);
-        }
-
-        message = arg;
-    }
-
-    if (message == null) {
-        try printUsageAndExit(args);
-    }
-
-    const matrix = try QrCode.create(allocator, errorCorrectionLevel, message.?);
+    const matrix = try qr_code.create(allocator, cliArgs.ecLevel, cliArgs.message);
     defer matrix.deinit();
 
     try ansi_renderer.render(matrix);
