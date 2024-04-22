@@ -143,15 +143,11 @@ pub fn applyBestPattern(pixels: BitMatrix, reserved: BitMatrix) u3 {
     for (patterns) |pattern| {
         applyPattern(pattern, pixels, reserved);
 
-        std.log.info("mask_pattern: {}", .{pattern});
-        @import("ansi-renderer.zig").render(pixels) catch unreachable;
-
         const n1 = computePenaltyN1(pixels);
         const n2 = computePenaltyN2(pixels);
         const n3 = computePenaltyN3(pixels);
         const n4 = computePenaltyN4(pixels);
         const penalty = n1 + n2 + n3 + n4;
-        std.log.debug("mask_pattern: pattern {} penalty {} (n1={} n2={} n3={} n4={})", .{ pattern, penalty, n1, n2, n3, n4 });
 
         if (penalty < minPenalty) {
             minPenalty = penalty;
@@ -161,7 +157,6 @@ pub fn applyBestPattern(pixels: BitMatrix, reserved: BitMatrix) u3 {
         // Reverse pattern (XOR)
         applyPattern(pattern, pixels, reserved);
     }
-    std.log.debug("mask_pattern: best pattern {} penalty is {}", .{ bestPattern, minPenalty });
 
     applyPattern(bestPattern, pixels, reserved);
 

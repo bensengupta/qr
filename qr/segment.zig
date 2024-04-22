@@ -58,11 +58,10 @@ const Segment = struct {
     data: BitBuffer,
 
     pub fn initEci(allocator: Allocator, data: []const u8) !Self {
-        const prefix = BitBuffer.init(allocator);
+        var prefix = BitBuffer.init(allocator);
 
-        // FIXME: Temporarily disabled ECI
-        // try prefix.append(u4, @intFromEnum(ModeIndicator.Eci));
-        // try prefix.append(u8, EciIndicator.Utf8);
+        try prefix.append(u4, @intFromEnum(ModeIndicator.Eci));
+        try prefix.append(u8, EciIndicator.Utf8);
 
         const numChars = data.len;
 

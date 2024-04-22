@@ -208,6 +208,10 @@ fn writeFormatInformation(pixels: BitMatrix, ecLevel: ErrorCorrectionLevel, mask
 }
 
 fn writeVersionInformation(pixels: BitMatrix, version: usize) void {
+    if (version < 7) {
+        return;
+    }
+
     const encoded = versionInfo.encodeVersionInfo(@intCast(version));
 
     var bits = [_]u1{0} ** 18;
@@ -265,9 +269,6 @@ fn encodeData(allocator: Allocator, version: usize, segments: Segments, ecLevel:
     var blocks = try Blocks.init(allocator);
     defer blocks.deinit();
 
-    // FIXME: This does not work for the text
-    // There is still something sus going on
-
     const gf = try GaloisField.init(allocator);
     defer gf.deinit(allocator);
 
@@ -297,8 +298,6 @@ pub fn make(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]u8
 
     const version = try getBestVersion(segments, ecLevel);
 
-    info("Using version: {}", .{version});
-
     const dataBits = try encodeData(allocator, version, segments, ecLevel);
     defer dataBits.deinit();
 
@@ -318,7 +317,7 @@ pub fn make(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]u8
     writeData(pixels, reserved, dataBits);
 
     const maskPattern = mask_pattern.applyBestPattern(pixels, reserved);
-    // const maskPattern = mask_pattern.MASK_PATTERN_1;
+    // const maskPattern = mask_pattern.MASK_PATTERN_7;
     // mask_pattern.applyPattern(maskPattern, pixels, reserved);
 
     writeFormatInformation(pixels, ecLevel, maskPattern);

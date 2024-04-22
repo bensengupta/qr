@@ -184,7 +184,7 @@ pub fn encodeVersionInfo(formatInfo: u6) u18 {
     const fmt = @as(u18, formatInfo) << 12;
     var result = fmt;
 
-    for (0..7) |i| {
+    for (0..6) |i| {
         const shift: u5 = @intCast(i);
         const mask: u18 = @as(u18, 1) << (17 - shift);
 

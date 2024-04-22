@@ -1,7 +1,6 @@
 const std = @import("std");
 const QrCode = @import("qr/index.zig");
 
-const info = std.log.info;
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 
