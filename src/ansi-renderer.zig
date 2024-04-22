@@ -6,16 +6,11 @@ const QUIET_ZONE_SIZE = 4;
 const ANSIColors = struct {
     const Reset = "\u{001B}[0m";
     const BgBlack = "\u{001B}[40m";
-    const BgBlue = "\u{001B}[44m";
     const BgWhite = "\u{001B}[47m";
 };
 
 pub fn render(matrix: BitMatrix) !void {
     try printMatrix(matrix, ANSIColors.BgBlack, ANSIColors.BgWhite);
-}
-
-pub fn renderBlue(matrix: BitMatrix) !void {
-    try printMatrix(matrix, ANSIColors.BgBlue, ANSIColors.BgWhite);
 }
 
 fn printMatrix(matrix: BitMatrix, trueColor: []const u8, falseColor: []const u8) !void {

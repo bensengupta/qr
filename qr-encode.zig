@@ -1,5 +1,6 @@
 const std = @import("std");
 const QrCode = @import("src/index.zig");
+const ansi_renderer = @import("src/ansi-renderer.zig");
 
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
@@ -24,7 +25,7 @@ pub fn main() !void {
         try printUsageAndExit(args);
     }
 
-    var errorCorrectionLevel = QrCode.ErrorCorrectionLevel.L;
+    var errorCorrectionLevel = QrCode.ErrorCorrectionLevel.M;
     var message: ?[:0]u8 = null;
 
     var i: usize = 1;
@@ -71,5 +72,8 @@ pub fn main() !void {
         try printUsageAndExit(args);
     }
 
-    try QrCode.make(allocator, errorCorrectionLevel, message.?);
+    const matrix = try QrCode.create(allocator, errorCorrectionLevel, message.?);
+    defer matrix.deinit();
+
+    try ansi_renderer.render(matrix);
 }

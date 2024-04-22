@@ -6,17 +6,18 @@ const assert = std.debug.assert;
 pub const BitMatrix = struct {
     const Self = @This();
 
+    allocator: Allocator,
     size: usize,
     data: []u1,
 
     pub fn init(allocator: Allocator, size: usize) !Self {
         const data = try allocator.alloc(u1, size * size);
         @memset(data, 0);
-        return Self{ .size = size, .data = data };
+        return Self{ .allocator = allocator, .size = size, .data = data };
     }
 
-    pub fn deinit(self: Self, allocator: Allocator) void {
-        allocator.free(self.data);
+    pub fn deinit(self: Self) void {
+        self.allocator.free(self.data);
     }
 
     pub fn get(self: Self, row: usize, col: usize) u1 {

@@ -504,9 +504,24 @@ pub fn getErrorCorrectionBlocks(version: usize, ecLevel: ErrorCorrectionLevel) u
     };
 }
 
-pub const reed_solomon = struct {
-    pub fn encode(allocator: Allocator, gf: GaloisField, msgIn: []u8, degree: usize) ![]u8 {
-        const gen = try Polynomial.generateRS(allocator, gf, degree);
+pub const ReedSolomonEncoder = struct {
+    const Self = @This();
+
+    gf: GaloisField,
+
+    pub fn init(allocator: Allocator) !Self {
+        const gf = try GaloisField.init(allocator);
+
+        return Self{ .gf = gf };
+    }
+
+    pub fn deinit(self: Self) void {
+        self.gf.deinit();
+    }
+
+    pub fn encode(self: Self, allocator: Allocator, msgIn: []u8, degree: usize) ![]u8 {
+        const gen = try Polynomial.generateRS(allocator, self.gf, degree);
+        defer gen.deinit();
 
         var msgOut = try allocator.alloc(u8, msgIn.len + gen.coefficients.len - 1);
         @memset(msgOut, 0);
@@ -520,11 +535,10 @@ pub const reed_solomon = struct {
             }
 
             for (1..gen.coefficients.len) |j| {
-                msgOut[i + j] ^= gf.mul(gen.coefficients[j], coef);
+                msgOut[i + j] ^= self.gf.mul(gen.coefficients[j], coef);
             }
         }
 
-        gen.deinit(allocator);
         std.mem.copyForwards(u8, msgOut, msgOut[msgIn.len..]);
         msgOut = try allocator.realloc(msgOut, msgOut.len - msgIn.len);
         return msgOut;

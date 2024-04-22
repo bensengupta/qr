@@ -1,19 +1,18 @@
 const std = @import("std");
-const versionInfo = @import("version-info.zig");
-const errorCorrection = @import("error-correction.zig");
+const version_info = @import("version-info.zig");
+const error_correction = @import("error-correction.zig");
 const seg = @import("segment.zig");
-const BitMatrix = @import("bit-matrix.zig").BitMatrix;
-const BitBuffer = @import("bit-buffer.zig").BitBuffer;
-const ansiRenderer = @import("ansi-renderer.zig");
-const GaloisField = @import("galois-field.zig").GaloisField;
-const Blocks = @import("blocks.zig").Blocks;
-const formatInfo = @import("format-info.zig");
+const format_info = @import("format-info.zig");
 const utils = @import("utils.zig");
 const mask_pattern = @import("mask.zig");
 
+const BitMatrix = @import("bit-matrix.zig").BitMatrix;
+const BitBuffer = @import("bit-buffer.zig").BitBuffer;
+const Blocks = @import("blocks.zig").Blocks;
+
 const Segments = seg.Segments;
 
-pub const ErrorCorrectionLevel = errorCorrection.ErrorCorrectionLevel;
+pub const ErrorCorrectionLevel = error_correction.ErrorCorrectionLevel;
 
 const info = std.log.info;
 const assert = std.debug.assert;
@@ -48,7 +47,7 @@ fn writeFinderPatterns(pixels: BitMatrix, reserved: BitMatrix) void {
 }
 
 fn writeAlignmentPatterns(pixels: BitMatrix, reserved: BitMatrix, version: usize) void {
-    const positions = versionInfo.getAlignmentPositions(version);
+    const positions = version_info.getAlignmentPositions(version);
 
     const patternSize = ALIGNMENT_PATTERN_SIZE;
 
@@ -167,7 +166,7 @@ fn writeFormatInformation(pixels: BitMatrix, ecLevel: ErrorCorrectionLevel, mask
     format |= @as(u5, @intFromEnum(ecLevel)) << 3;
     format |= @as(u5, maskPattern);
 
-    var encoded = formatInfo.encodeFormatInfo(format);
+    var encoded = format_info.encodeFormatInfo(format);
     encoded ^= FORMAT_INFO_MASK;
 
     var bits = [_]u1{0} ** 15;
@@ -212,7 +211,7 @@ fn writeVersionInformation(pixels: BitMatrix, version: usize) void {
         return;
     }
 
-    const encoded = versionInfo.encodeVersionInfo(@intCast(version));
+    const encoded = version_info.encodeVersionInfo(@intCast(version));
 
     var bits = [_]u1{0} ** 18;
     utils.splitIntoBits(u18, encoded, &bits);
@@ -232,8 +231,8 @@ fn getBestVersion(segments: Segments, ecLevel: ErrorCorrectionLevel) Error!usize
         const totalDataBits = segments.getTotalBits(version);
         const totalDataCodewords = (totalDataBits + 7) / 8; // + 7 to round up
 
-        const totalCodewordsCapacity = versionInfo.getTotalCodewords(version);
-        const numECCodewords = errorCorrection.getErrorCorrectionCodewords(version, ecLevel);
+        const totalCodewordsCapacity = version_info.getTotalCodewords(version);
+        const numECCodewords = error_correction.getErrorCorrectionCodewords(version, ecLevel);
         const availableDataCodeWords = totalCodewordsCapacity - numECCodewords;
 
         if (totalDataCodewords <= availableDataCodeWords) {
@@ -248,13 +247,13 @@ fn encodeData(allocator: Allocator, version: usize, segments: Segments, ecLevel:
     const dataCodewords = try segments.assembleCodewords(allocator, version, ecLevel);
     defer allocator.free(dataCodewords);
 
-    const totalCodewords = versionInfo.getTotalCodewords(version);
-    const totalECCodewords = errorCorrection.getErrorCorrectionCodewords(version, ecLevel);
+    const totalCodewords = version_info.getTotalCodewords(version);
+    const totalECCodewords = error_correction.getErrorCorrectionCodewords(version, ecLevel);
     const totalDataCodewords = totalCodewords - totalECCodewords;
 
     assert(totalDataCodewords == dataCodewords.len);
 
-    const numECBlocks = errorCorrection.getErrorCorrectionBlocks(version, ecLevel);
+    const numECBlocks = error_correction.getErrorCorrectionBlocks(version, ecLevel);
 
     const blocksInGroup2 = totalCodewords % numECBlocks;
     const blocksInGroup1 = numECBlocks - blocksInGroup2;
@@ -269,8 +268,8 @@ fn encodeData(allocator: Allocator, version: usize, segments: Segments, ecLevel:
     var blocks = try Blocks.init(allocator);
     defer blocks.deinit();
 
-    const gf = try GaloisField.init(allocator);
-    defer gf.deinit(allocator);
+    const rs = try error_correction.ReedSolomonEncoder.init(allocator);
+    defer rs.deinit();
 
     var offset: usize = 0;
     for (0..numECBlocks) |b| {
@@ -280,7 +279,7 @@ fn encodeData(allocator: Allocator, version: usize, segments: Segments, ecLevel:
 
         try blocks.writeDCBlock(blockDCData);
 
-        const blockECData = try errorCorrection.reed_solomon.encode(allocator, gf, blockDCData, ecCount);
+        const blockECData = try rs.encode(allocator, blockDCData, ecCount);
         defer allocator.free(blockECData);
 
         try blocks.writeECBlock(blockECData);
@@ -292,7 +291,7 @@ fn encodeData(allocator: Allocator, version: usize, segments: Segments, ecLevel:
     return interleaved;
 }
 
-pub fn make(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]u8) !void {
+pub fn create(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]const u8) !BitMatrix {
     const segments = try Segments.init(allocator, content);
     defer segments.deinit();
 
@@ -301,12 +300,12 @@ pub fn make(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]u8
     const dataBits = try encodeData(allocator, version, segments, ecLevel);
     defer dataBits.deinit();
 
-    const matrixSize = versionInfo.getMatrixSize(version);
+    const matrixSize = version_info.getMatrixSize(version);
 
     const pixels = try BitMatrix.init(allocator, matrixSize);
+
     const reserved = try BitMatrix.init(allocator, matrixSize);
-    defer pixels.deinit(allocator);
-    defer reserved.deinit(allocator);
+    defer reserved.deinit();
 
     writeFinderPatterns(pixels, reserved);
     writeAlignmentPatterns(pixels, reserved, version);
@@ -317,12 +316,19 @@ pub fn make(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]u8
     writeData(pixels, reserved, dataBits);
 
     const maskPattern = mask_pattern.applyBestPattern(pixels, reserved);
-    // const maskPattern = mask_pattern.MASK_PATTERN_7;
-    // mask_pattern.applyPattern(maskPattern, pixels, reserved);
 
     writeFormatInformation(pixels, ecLevel, maskPattern);
     writeVersionInformation(pixels, version);
-    //
-    // try ansiRenderer.renderBlue(reserved);
-    try ansiRenderer.render(pixels);
+
+    return pixels;
+}
+
+test "no memory leaks" {
+    const allocator = std.testing.allocator;
+
+    const content = "Hello, world!";
+    const ecLevel = ErrorCorrectionLevel.M;
+
+    const matrix = try create(allocator, ecLevel, content);
+    defer matrix.deinit();
 }

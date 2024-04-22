@@ -9,6 +9,7 @@ const PRIME = 0x11d;
 pub const GaloisField = struct {
     const Self = @This();
 
+    allocator: Allocator,
     exp: []u8,
     log: []u8,
 
@@ -30,12 +31,12 @@ pub const GaloisField = struct {
             exp[i] = exp[i - 255];
         }
 
-        return Self{ .exp = exp, .log = log };
+        return Self{ .allocator = allocator, .exp = exp, .log = log };
     }
 
-    pub fn deinit(self: Self, allocator: Allocator) void {
-        allocator.free(self.exp);
-        allocator.free(self.log);
+    pub fn deinit(self: Self) void {
+        self.allocator.free(self.exp);
+        self.allocator.free(self.log);
     }
 
     pub fn mul(self: Self, a: u8, b: u8) u8 {
@@ -57,15 +58,16 @@ pub const GaloisField = struct {
 pub const Polynomial = struct {
     const Self = @This();
 
+    allocator: Allocator,
     coefficients: []u8,
 
     fn init(allocator: Allocator, degree: usize) !Self {
         const coefficients = try allocator.alloc(u8, degree);
-        return Self{ .coefficients = coefficients };
+        return Self{ .allocator = allocator, .coefficients = coefficients };
     }
 
-    pub fn deinit(self: Self, allocator: Allocator) void {
-        allocator.free(self.coefficients);
+    pub fn deinit(self: Self) void {
+        self.allocator.free(self.coefficients);
     }
 
     fn mul(allocator: Allocator, gf: GaloisField, p: Self, q: Self) !Self {
@@ -88,11 +90,11 @@ pub const Polynomial = struct {
 
         for (0..degree) |i| {
             var coeff = [_]u8{ 1, gf.pow(2, i) };
-            const poly2 = Self{ .coefficients = &coeff };
+            const poly2 = Self{ .allocator = allocator, .coefficients = &coeff };
 
             const newGen = try Self.mul(allocator, gf, gen, poly2);
 
-            gen.deinit(allocator);
+            gen.deinit();
             gen = newGen;
         }
 
