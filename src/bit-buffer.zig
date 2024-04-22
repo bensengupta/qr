@@ -24,17 +24,6 @@ pub const BitBuffer = struct {
         return self.arrayList.items[index];
     }
 
-    // pub fn getByte(self: Self, index: usize) u8 {
-    //     assert(index + 8 <= self.arrayList.items.len);
-    //
-    //     var result: u8 = 0;
-    //     for (0..8) |i| {
-    //         const bit: u8 = @intCast(self.get(index + i));
-    //         result = (result << 1) | bit;
-    //     }
-    //     return result;
-    // }
-
     pub fn getLength(self: Self) usize {
         return self.arrayList.items.len;
     }
