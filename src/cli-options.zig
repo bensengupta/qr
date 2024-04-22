@@ -31,7 +31,7 @@ fn strEq(arg: [:0]const u8, str: [:0]const u8) bool {
     return std.mem.eql(u8, arg, str);
 }
 
-pub const CliArgs = struct {
+pub const CliOptions = struct {
     const Self = @This();
 
     message: [:0]const u8,
@@ -69,7 +69,7 @@ pub const CliArgs = struct {
         message.* = args[i.*];
     }
 
-    pub fn parse(args: [][:0]const u8) Self {
+    pub fn parseArgs(args: [][:0]const u8) Self {
         var ecLevel: ?ErrorCorrectionLevel = null;
         var message: ?[:0]const u8 = null;
 
@@ -98,6 +98,6 @@ pub const CliArgs = struct {
             exitWithErrorMessage("missing message");
         }
 
-        return CliArgs{ .ecLevel = ecLevel.?, .message = message.? };
+        return CliOptions{ .ecLevel = ecLevel.?, .message = message.? };
     }
 };
