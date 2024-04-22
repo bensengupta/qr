@@ -1,8 +1,8 @@
-# Qr Code encoder
+# QR Code Encoder
 
 ## Requirements
 
-- Zig
+- Zig 0.12+
 
 ## Usage
 
@@ -17,3 +17,11 @@ zig build-exe main.zig
 
 - [Reed-Solomon codes for coders](https://en.wikiversity.org/wiki/Reed%E2%80%93Solomon_codes_for_coders)
 - [node-qrcode](https://github.com/soldair/node-qrcode)
+
+## License
+
+[MIT](./LICENSE.md)
+
+The word "QR Code" is registered trademark of:
+DENSO WAVE INCORPORATED
+
