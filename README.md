@@ -5,6 +5,14 @@ QR Code encoder written in Zig.
 ## Usage
 
 ```
+$ qr-encode --error M "Hello world"
+```
+
+![QR Code](./demo.png)
+
+## Options
+
+```
 $ qr-encode --help
 
 Usage: qr-encode [options] <message>
@@ -24,14 +32,12 @@ Examples:
 
 - Zig 0.12+
 
-## Build
+## Installation
 
 ```bash
-zig build-exe qr-encode.zig
-./qr-encode -e M "Hello world"
+$ zig build-exe qr-encode.zig
+$ ./qr-encode "Hello world"
 ```
-
-![QR Code](./demo.png)
 
 ## References
 
