@@ -8,5 +8,7 @@
 
 ```bash
 zig build-exe main.zig
-./main -e L "<your message>"
+./main -e M "Hello world"
 ```
+
+![QR Code](./demo.png)
