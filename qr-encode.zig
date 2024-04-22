@@ -1,5 +1,5 @@
 const std = @import("std");
-const QrCode = @import("qr/index.zig");
+const QrCode = @import("src/index.zig");
 
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;

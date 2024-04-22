@@ -7,8 +7,8 @@
 ## Usage
 
 ```bash
-zig build-exe main.zig
-./main -e M "Hello world"
+zig build-exe qr-encode.zig
+./qr-encode -e M "Hello world"
 ```
 
 ![QR Code](./demo.png)
