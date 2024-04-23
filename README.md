@@ -1,6 +1,6 @@
 # qr
 
-QR Code encoder written in Zig. [See it in action](https://bensengupta.github.io/qr/) in your browser using WebAssembly!
+QR Code encoder written in Zig. See it in action here: [bensengupta.github.io/qr](https://bensengupta.github.io/qr/)
 
 ## Usage
 
