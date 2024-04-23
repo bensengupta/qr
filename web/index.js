@@ -1,4 +1,4 @@
-const WASM_FILE = "qr.wasm";
+const WASM_FILE = "web/qr.wasm";
 
 function renderQRCode(matrix, size) {
   const canvas = document.createElement("canvas");
