@@ -1,2 +1,2 @@
-qr-encode
-*.o
+zig-out/
+zig-cache/

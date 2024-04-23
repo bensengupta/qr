@@ -291,18 +291,38 @@ fn encodeData(allocator: Allocator, version: usize, segments: Segments, ecLevel:
     return interleaved;
 }
 
-pub fn create(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]const u8) !BitMatrix {
-    const segments = try Segments.init(allocator, content);
+fn addQuietZone(pixels: *BitMatrix, quietZoneSize: usize) !void {
+    const newSize = pixels.size + quietZoneSize * 2;
+    const newPixels = try BitMatrix.init(pixels.allocator, newSize);
+
+    for (0..pixels.size) |r| {
+        for (0..pixels.size) |c| {
+            newPixels.set(r + quietZoneSize, c + quietZoneSize, pixels.get(r, c));
+        }
+    }
+
+    pixels.deinit();
+    pixels.* = newPixels;
+}
+
+pub const CreateOptions = struct {
+    content: []const u8,
+    ecLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.M,
+    quietZoneSize: usize = 4,
+};
+
+pub fn create(allocator: Allocator, options: CreateOptions) !BitMatrix {
+    const segments = try Segments.init(allocator, options.content);
     defer segments.deinit();
 
-    const version = try getBestVersion(segments, ecLevel);
+    const version = try getBestVersion(segments, options.ecLevel);
 
-    const dataBits = try encodeData(allocator, version, segments, ecLevel);
+    const dataBits = try encodeData(allocator, version, segments, options.ecLevel);
     defer dataBits.deinit();
 
     const matrixSize = version_info.getMatrixSize(version);
 
-    const pixels = try BitMatrix.init(allocator, matrixSize);
+    var pixels = try BitMatrix.init(allocator, matrixSize);
 
     const reserved = try BitMatrix.init(allocator, matrixSize);
     defer reserved.deinit();
@@ -317,8 +337,10 @@ pub fn create(allocator: Allocator, ecLevel: ErrorCorrectionLevel, content: [:0]
 
     const maskPattern = mask_pattern.applyBestPattern(pixels, reserved);
 
-    writeFormatInformation(pixels, ecLevel, maskPattern);
+    writeFormatInformation(pixels, options.ecLevel, maskPattern);
     writeVersionInformation(pixels, version);
+
+    try addQuietZone(&pixels, options.quietZoneSize);
 
     return pixels;
 }

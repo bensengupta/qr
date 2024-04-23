@@ -1,11 +1,11 @@
-# qr-encode
+# qr
 
 QR Code encoder written in Zig.
 
 ## Usage
 
 ```
-$ qr-encode --error M "Hello world"
+$ qr --error M "Hello world"
 ```
 
 ![QR Code](./demo.png)
@@ -13,30 +13,38 @@ $ qr-encode --error M "Hello world"
 ## Options
 
 ```
-$ qr-encode --help
+$ qr --help
 
-Usage: qr-encode [options] <message>
+Usage: qr [options] <message>
 
 QR Code options:
   -e, --error     Error correction level       ["L", "M", "Q", "H"]
+  -q, --qzone     Quiet zone size                         [integer]
 
 Options:
   -h, --help      Show help
 
 Examples:
-  qr-encode "some text"
-  qr-encode -e H "some text"
+  qr "some text"
+  qr -e H "some text"
 ```
 
 ## Requirements
 
 - Zig 0.12+
 
-## Installation
+## Run
 
-```bash
-$ zig build-exe qr-encode.zig
-$ ./qr-encode "Hello world"
+```
+$ zig build
+$ ./zig-out/bin/qr "Hello world"
+```
+
+## WebAssembly
+
+```
+$ zig build wasm
+$ cp ./zig-out/qr.wasm web/
 ```
 
 ## References
