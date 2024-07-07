@@ -31,7 +31,7 @@ Examples:
 
 ## Requirements
 
-- Zig 0.12+
+- Zig 0.13+
 
 ## Run
 

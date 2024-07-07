@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "qr",
-        .root_source_file = .{ .path = "main-cli.zig" },
+        .root_source_file = b.path("main-cli.zig"),
         .target = b.standardTargetOptions(.{}),
         .optimize = optimize,
     });
@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
 
     const wasm = b.addExecutable(.{
         .name = "qr",
-        .root_source_file = .{ .path = "main-wasm.zig" },
+        .root_source_file = b.path("main-wasm.zig"),
         .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
         .optimize = optimize,
     });

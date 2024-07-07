@@ -20,6 +20,8 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            box-sizing: border-box;
+            padding: 1rem;
         }
 
         .row {
@@ -28,12 +30,14 @@
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
+            width: 100%;
             gap: 1rem;
         }
 
         #qr-form {
             display: flex;
             flex-direction: column;
+            flex-basis: 25rem;
             gap: 1rem;
         }
 
@@ -43,6 +47,7 @@
 
         textarea {
             resize: vertical;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -53,7 +58,7 @@
         <div class="row">
             <form id="qr-form">
                 <label for="text">Message:</label>
-                <textarea id="text" name="text" rows="4" cols="50" placeholder="Message to encode" required></textarea>
+                <textarea id="text" name="text" rows="4" placeholder="Message to encode" required></textarea>
                 <label for="ec-level">Error Correction Level:</label>
                 <select id="ec-level" name="ec-level" required>
                     <option value="L">L</option>
