@@ -312,12 +312,12 @@ pub const CreateOptions = struct {
 };
 
 pub fn create(allocator: Allocator, options: CreateOptions) !BitMatrix {
-    const segments = try Segments.init(allocator, options.content);
+    var segments = try Segments.init(allocator, options.content);
     defer segments.deinit();
 
     const version = try getBestVersion(segments, options.ecLevel);
 
-    const dataBits = try encodeData(allocator, version, segments, options.ecLevel);
+    var dataBits = try encodeData(allocator, version, segments, options.ecLevel);
     defer dataBits.deinit();
 
     const matrixSize = version_info.getMatrixSize(version);
@@ -351,6 +351,6 @@ test "no memory leaks" {
     const content = "Hello, world!";
     const ecLevel = ErrorCorrectionLevel.M;
 
-    const matrix = try create(allocator, ecLevel, content);
+    var matrix = try create(allocator, .{ .content = content, .ecLevel = ecLevel });
     defer matrix.deinit();
 }

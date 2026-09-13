@@ -19,32 +19,32 @@ pub const Blocks = struct {
     ) !Self {
         return Self{
             .allocator = allocator,
-            .dcData = ArrayList([]u8).init(allocator),
-            .ecData = ArrayList([]u8).init(allocator),
+            .dcData = ArrayList([]u8).empty,
+            .ecData = ArrayList([]u8).empty,
         };
     }
 
-    pub fn deinit(self: Self) void {
+    pub fn deinit(self: *Self) void {
         for (self.dcData.items) |block| {
             self.allocator.free(block);
         }
         for (self.ecData.items) |block| {
             self.allocator.free(block);
         }
-        self.dcData.deinit();
-        self.ecData.deinit();
+        self.dcData.deinit(self.allocator);
+        self.ecData.deinit(self.allocator);
     }
 
     pub fn writeDCBlock(self: *Self, data: []u8) !void {
         const block = try self.allocator.alloc(u8, data.len);
         @memcpy(block, data);
-        try self.dcData.append(block);
+        try self.dcData.append(self.allocator, block);
     }
 
     pub fn writeECBlock(self: *Self, data: []u8) !void {
         const block = try self.allocator.alloc(u8, data.len);
         @memcpy(block, data);
-        try self.ecData.append(block);
+        try self.ecData.append(self.allocator, block);
     }
 
     pub fn interleave(self: Self, allocator: Allocator) !BitBuffer {
