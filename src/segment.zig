@@ -79,11 +79,11 @@ const Segment = struct {
     }
 
     pub fn getLengthBits(self: Self, version: usize) usize {
-        const modeBits = @bitSizeOf(@typeInfo(ModeIndicator).Enum.tag_type);
+        const modeBits = @bitSizeOf(@typeInfo(ModeIndicator).@"enum".tag_type);
         return self.prefix.getLength() + modeBits + getCharCountNumBits(version, self.mode) + self.data.getLength();
     }
 
-    pub fn deinit(self: Self) void {
+    pub fn deinit(self: *Self) void {
         self.prefix.deinit();
         self.data.deinit();
     }
@@ -92,25 +92,27 @@ const Segment = struct {
 pub const Segments = struct {
     const Self = @This();
 
+    allocator: Allocator,
     segments: std.ArrayList(Segment),
 
     pub fn init(allocator: Allocator, data: []const u8) !Self {
-        var segments = std.ArrayList(Segment).init(allocator);
+        var segments = std.ArrayList(Segment).empty;
 
         const segment = try Segment.initEci(allocator, data);
-        try segments.append(segment);
+        try segments.append(allocator, segment);
 
         return Self{
+            .allocator = allocator,
             .segments = segments,
         };
     }
 
-    pub fn deinit(self: Self) void {
-        for (self.segments.items) |segment| {
+    pub fn deinit(self: *Self) void {
+        for (self.segments.items) |*segment| {
             segment.deinit();
         }
 
-        self.segments.deinit();
+        self.segments.deinit(self.allocator);
     }
 
     /// Returns the total number of bits required to encode all segments.
