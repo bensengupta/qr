@@ -6,7 +6,7 @@ const format_info = @import("format-info.zig");
 const utils = @import("utils.zig");
 const mask_pattern = @import("mask.zig");
 
-const BitMatrix = @import("bit-matrix.zig").BitMatrix;
+pub const BitMatrix = @import("bit-matrix.zig").BitMatrix;
 const BitBuffer = @import("bit-buffer.zig").BitBuffer;
 const Blocks = @import("blocks.zig").Blocks;
 

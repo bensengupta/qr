@@ -1,0 +1,18 @@
+.{
+    .name = .qr,
+    .version = "0.0.1",
+    .fingerprint = 0xc9f64a58afe4b2c9,
+    .minimum_zig_version = "0.16.0",
+    .paths = .{
+        "src",
+        "web",
+        "build.zig",
+        "build.zig.zon",
+        "README.md",
+        "LICENSE.md",
+        "main-cli.zig",
+        "main-wasm.zig",
+        "index.html",
+        "demo.png",
+    },
+}

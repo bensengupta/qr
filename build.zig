@@ -2,20 +2,30 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
+    const target = b.standardTargetOptions(.{});
 
+    _ = b.addModule("qr", .{
+        .root_source_file = b.path("src/index.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
     const exe = b.addExecutable(.{
         .name = "qr",
-        .root_source_file = b.path("main-cli.zig"),
-        .target = b.standardTargetOptions(.{}),
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("main-cli.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
     b.installArtifact(exe);
 
     const wasm = b.addExecutable(.{
         .name = "qr",
-        .root_source_file = b.path("main-wasm.zig"),
-        .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("main-wasm.zig"),
+            .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
+            .optimize = optimize,
+        }),
     });
     wasm.entry = .disabled;
     wasm.rdynamic = true;
